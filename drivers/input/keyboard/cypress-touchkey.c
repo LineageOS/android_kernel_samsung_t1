@@ -255,7 +255,7 @@ static int cptk_early_suspend(struct early_suspend *h)
 
 static int cptk_late_resume(struct early_suspend *h)
 {
-    pr_debug("cptk: %s\n", __func__);
+    pr_info("cptk: %s\n", __func__);
 
     struct cptk_data *cptk = container_of(h,
             struct cptk_data,
@@ -268,10 +268,15 @@ static int cptk_late_resume(struct early_suspend *h)
         cptk->enable = true;
         enable_irq(cptk->client->irq);
 
+        pr_info("cptk: %s auto calibration...\n", __func__);
         cptk_i2c_write(cptk, KEYCODE_REG, AUTO_CAL_MODE_CMD);
         cptk_i2c_write(cptk, CMD_REG, AUTO_CAL_EN_CMD);
-        msleep(50);
+    } else {
+        pr_info("cptk: %s auto calibration...\n", __func__);
+        cptk_i2c_write(cptk, KEYCODE_REG, AUTO_CAL_MODE_CMD);
+        cptk_i2c_write(cptk, CMD_REG, AUTO_CAL_EN_CMD);      
     }
+    msleep(50);
 
     if (cptk->enable) {
         if (touch_led_disabled == 0) {
@@ -862,6 +867,7 @@ static int __devinit cptk_i2c_probe(struct i2c_client *client,
     register_early_suspend(&cptk->early_suspend);
 #endif
 
+    pr_info("cptk: %s first auto calibration...\n", __func__);
     cptk_i2c_write(cptk, KEYCODE_REG, AUTO_CAL_MODE_CMD);
     cptk_i2c_write(cptk, CMD_REG, AUTO_CAL_EN_CMD);
 
@@ -869,22 +875,35 @@ static int __devinit cptk_i2c_probe(struct i2c_client *client,
                    IRQF_TRIGGER_LOW | IRQF_ONESHOT,
                    DEVICE_NAME, cptk);
 
+    if (ret < 0) {
+        pr_err("%s: request_threaded_irq returned %d\n", __func__, ret);
+        goto err_exit2;
+    }
+
     // init workqueue
     cptk->wq = create_singlethread_workqueue("cptk_wq");
     if (!cptk->wq) {
         ret = -ENOMEM;
         pr_err("%s: could not create workqueue\n", __func__);
+        goto err_exit2;
     }
 
     /* this is the thread function we run on the work queue */
 	INIT_WORK(&cptk->work, touch_led_timedout_work);
 
-    if (ret < 0)
-        goto err_exit2;
-
     ret = cptk_create_sec_touchkey(cptk);
-    if (ret < 0)
+    if (ret < 0) {
+        pr_err("%s: cptk_create_sec_touchkey returned %d\n", __func__, ret);
         goto err_exit2;
+    }
+
+    /* trigger autocalibration again to make sure. 
+     * first one seems to fail on some phones.
+     */
+    pr_info("cptk: %s second auto calibration...\n", __func__);
+    cptk_i2c_write(cptk, KEYCODE_REG, AUTO_CAL_MODE_CMD);
+    cptk_i2c_write(cptk, CMD_REG, AUTO_CAL_EN_CMD);
+    msleep(50);
 
     return 0;
 
