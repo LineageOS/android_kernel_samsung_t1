@@ -155,6 +155,8 @@ struct mxt224_data {
 	struct finger_info fingers[];
 };
 
+static int tsp_led_attr = 0;   /* enable or disable led */
+
 struct mxt224_data *copy_data;
 int tch_is_pressed;
 EXPORT_SYMBOL(tch_is_pressed);
@@ -926,7 +928,10 @@ static void report_input_data(struct mxt224_data *data)
 		tch_is_pressed = 0;
 
     // report state to cypress-touchkey for backlight timeout
-    touchscreen_state_report(tch_is_pressed);
+    if (tsp_led_attr == 1)
+        touchscreen_state_report(tch_is_pressed);
+    else
+        touchscreen_state_report(2);
 
 	if (boot_or_resume) {
 		if (count >= 2 && !auto_cal_flag)
@@ -1918,6 +1923,29 @@ static ssize_t key_threshold_store(struct device *dev,
 	}
 	return size;
 }
+static ssize_t key_led_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", tsp_led_attr);
+}
+
+static ssize_t key_led_store(struct device *dev,
+		struct device_attribute *attr,
+		const char *buf, size_t size)
+{
+    int data;
+    int ret;
+
+    ret = sscanf(buf, "%d\n", &data);
+    if (unlikely(ret != 1)) {
+        pr_err("cptk: %s err\n", __func__);
+        return -EINVAL;
+    }
+    pr_info("cptk: %s set tsp_led=%d\n", __func__, data);
+    tsp_led_attr = data;
+
+    return size;
+}
 
 static ssize_t set_mxt_firm_version_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -1974,6 +2002,9 @@ static DEVICE_ATTR(object_write, S_IWUSR | S_IWGRP, NULL,
 		mxt224_object_setting);
 static DEVICE_ATTR(dbg_switch, S_IWUSR | S_IWGRP, NULL,
 		mxt224_debug_setting);
+/* led return, store */
+static DEVICE_ATTR(tsp_led, S_IRUGO | S_IWUSR | S_IWGRP,
+		key_led_show, key_led_store);
 
 
 static struct attribute *mxt224_attrs[] = {
@@ -2191,6 +2222,11 @@ static int __devinit mxt224_probe(struct i2c_client *client,
 				&dev_attr_tsp_threshold) < 0)
 		pr_err("[TSP] Failed to create device file(%s)!\n",
 				dev_attr_tsp_threshold.attr.name);
+    
+    if (device_create_file(sec_touchscreen,
+				&dev_attr_tsp_led) < 0)
+		pr_err("[TSP] Failed to create device file(%s)!\n",
+				dev_attr_tsp_led.attr.name);
 
 	if (device_create_file(sec_touchscreen,
 				&dev_attr_tsp_firm_version_phone) < 0)

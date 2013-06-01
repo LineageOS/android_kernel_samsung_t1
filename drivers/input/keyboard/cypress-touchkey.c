@@ -647,6 +647,12 @@ void touchscreen_state_report(int state)
                 touch_led_timer.expires = jiffies + (HZ * touch_led_timeout);
                 add_timer(&touch_led_timer);
             }
+        } else if (state == 2 && !cptk_local->notification) {
+            if (cptk_local->led_status == LED_ON_CMD && timer_pending(&touch_led_timer) == 0){
+                pr_debug("cptk: %s add_timer\n", __func__);
+                touch_led_timer.expires = jiffies + (HZ * touch_led_timeout);
+                add_timer(&touch_led_timer);
+            }
         }
     }
 }
