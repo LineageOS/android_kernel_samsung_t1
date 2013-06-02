@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "iCuH42I",
+        "filename": "drivers/input/touchscreen/mxt224_t1.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2225,
+      "author": {
+        "id": 3589
+      },
+      "writtenOn": "2013-06-02T01:56:32Z",
+      "side": 1,
+      "message": "Whitespace",
+      "revId": "0578676149aef98e73057045ed42ab912633bfc3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
