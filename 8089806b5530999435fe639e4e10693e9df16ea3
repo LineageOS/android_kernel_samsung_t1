@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "iA41TUU",
+        "filename": "drivers/input/keyboard/cypress-touchkey.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 6396
+      },
+      "writtenOn": "2013-06-02T22:04:25Z",
+      "side": 1,
+      "message": "bug: need a timer here",
+      "revId": "8089806b5530999435fe639e4e10693e9df16ea3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "iA6C7QA",
+        "filename": "drivers/input/keyboard/cypress-touchkey.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 553,
+      "author": {
+        "id": 6396
+      },
+      "writtenOn": "2013-06-02T22:04:25Z",
+      "side": 1,
+      "message": "if (data \u003d\u003d 1)   --\u003e    if(data \u003d\u003d 0)\n\nand add :\n\nmutex_lock(\u0026cptk-\u003elock); \n\nif (cptk-\u003eenable) {...}\n\nmutex_unlock(\u0026cptk-\u003elock);",
+      "revId": "8089806b5530999435fe639e4e10693e9df16ea3",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": false
+    }
+  ]
+}
