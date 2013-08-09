@@ -45,19 +45,19 @@ static struct vibrator {
 	unsigned gpio_en;
 } vibdata;
 
-static ssize_t pwmvalue_show(struct device *dev,
+static ssize_t pwm_value_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
 
 	int count;
 
 	count = sprintf(buf, "%lu\n", pwmval);
-	pr_info("vibrator: pwmval: %lu\n", pwmval);
+	pr_info("vibrator: pwm value: %lu\n", pwmval);
 
 	return count;
 }
 
-ssize_t pwmvalue_store(struct device *dev,
+ssize_t pwm_value_store(struct device *dev,
 		struct device_attribute *attr,
 		const char *buf, size_t size)
 {
@@ -65,12 +65,12 @@ ssize_t pwmvalue_store(struct device *dev,
 	if (kstrtoul(buf, 0, &pwmval))
 		pr_err("vibrator: error in storing pwm value\n");
 
-	pr_info("vibrator: pwmval: %lu\n", pwmval);
+	pr_info("vibrator: pwm value: %lu\n", pwmval);
 
 	return size;
 }
-static DEVICE_ATTR(pwmvalue, S_IRUGO | S_IWUSR,
-		pwmvalue_show, pwmvalue_store);
+static DEVICE_ATTR(pwm_value, S_IRUGO | S_IWUSR,
+		pwm_value_show, pwm_value_store);
 
 static int pwm_set(unsigned long force)
 {
@@ -103,26 +103,6 @@ static int pwm_set(unsigned long force)
 	omap_dm_timer_save_context(vibdata.gptimer);
 
 	return 0;
-}
-
-static int t1_create_vibrator_sysfs(void)
-{
-
-	int ret;
-	struct kobject *vibrator_kobj;
-	vibrator_kobj = kobject_create_and_add("vibrator", NULL);
-	if (unlikely(!vibrator_kobj))
-		return -ENOMEM;
-
-	ret = sysfs_create_file(vibrator_kobj,
-			&dev_attr_pwmvalue.attr);
-	if (unlikely(ret < 0)) {
-		pr_err("vibrator: sysfs_create_file failed: %d\n", ret);
-		return ret;
-	}
-
-	return 0;
-
 }
 
 static void vibrator_off(void)
@@ -166,7 +146,7 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 	hrtimer_cancel(&vibdata.timer);
 
 	if (value) {
-        pr_info("vibrator: value=%d, pwmval=%lu\n", value, pwmval);
+        pr_info("vibrator: value=%d, pwm value=%lu\n", value, pwmval);
 		wake_lock(&vibdata.wklock);
 
 		gpio_set_value(vibdata.gpio_en, 1);
@@ -232,14 +212,17 @@ static int __init vibrator_init(void)
 	wake_lock_init(&vibdata.wklock, WAKE_LOCK_SUSPEND, "vibrator");
 	mutex_init(&vibdata.lock);
 
-    t1_create_vibrator_sysfs();
-
 	ret = timed_output_dev_register(&to_dev);
 	if (ret < 0) {
         pr_err("vibrator_init(): failed to register timed_output device\n");
 		goto err_to_dev_reg;
     }
-    
+
+	ret = device_create_file(to_dev.dev, &dev_attr_pwm_value);
+	if (ret < 0) {
+		pr_err("vibrator_init(): create sysfs fail: pwm_value\n");
+	}
+
 	return 0;
 
 err_to_dev_reg:
